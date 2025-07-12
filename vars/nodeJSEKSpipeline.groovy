@@ -9,6 +9,8 @@ def call(Map configMap){
             environment = 'dev'
             project = configMap.get("project")
             component = configMap.get("component")
+            
+            
         }
 
         stages {
@@ -48,12 +50,12 @@ def call(Map configMap){
                     withAWS(region: 'us-east-1', credentials: 'aws-cred') {
                         sh """
                         aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 905418383993.dkr.ecr.us-east-1.amazonaws.com
-                        docker build -t expense/backend:${appVersion} .
+                        docker build -t ${project}/${component}:${appVersion} .
                         docker images
-                        docker tag expense/backend:${appVersion} 905418383993.dkr.ecr.us-east-1.amazonaws.com/expense/backend:${appVersion}
-                        docker push 905418383993.dkr.ecr.us-east-1.amazonaws.com/expense/backend:${appVersion}
+                        docker tag ${project}/${component}:${appVersion} 905418383993.dkr.ecr.us-east-1.amazonaws.com/${project}/${component}:${appVersion}
+                        docker push 905418383993.dkr.ecr.us-east-1.amazonaws.com/${project}/${component}:${appVersion}
                         """
-                    } 
+                    }
                 }
 
             }
@@ -83,7 +85,11 @@ def call(Map configMap){
             stage ('deploy-cd') {
                 steps {
                     echo 'triggering backend cd'
-                    build job: "backend-cd",parameters: [string(name: version, values: "$appVersion"),string(name: )], wait: true
+                    build job: "../${component}-cd",parameters: [
+                        string(name: version, values: "$appVersion"),
+                        string(name: ENV, values: "dev")], wait: true
+                    // if the backend-cd is not in the same folder: ../backend
+                    // if in same folder : backend-cd
                 }
                 
             }
